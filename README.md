@@ -1,6 +1,12 @@
 
 
-# Test1
+# Chess
+
+## Description
+This is going to be a chess application.
+The application will launch a gnuchess instance on the backend via node.js
+The web page will communicate with the backend with simple "rest" like GET URLs.
+The board will be an SVG document, where the pieces are moved around by manipulating the SVG elements.
 
 
 
