@@ -9,13 +9,10 @@ The web page will communicate with the backend with simple "rest" like GET URLs.
 The board will be an SVG document, where the pieces are moved around by manipulating the SVG elements.
 
 
-
 ## Usage
 
 
-
 ## Developing
-
 
 
 ### Tools
