@@ -38,36 +38,44 @@ function Board() {
 
 	this.pieces = [
 		{
-			name: "whiteRook1",
+			name: "whiteRook2",
 			id: "g3218",
-		},
-		{
-			name: "whiteKnight1",
-			id: "g60673"
-		},
-		{
-			name: "whiteBishop1",
-			id: "g3010"
-		},
-		{
-			name: "whiteKing",
-			id: "g82263"
-		},
-		{
-			name: "whiteQueen",
-			id: "g80246"
-		},
-		{
-			name: "whiteBishop2",
-			id: "g3388"
+			square: "h1",
 		},
 		{
 			name: "whiteKnight2",
-			id: "g60695"
+			id: "g60673",
+			square: "g1",
 		},
 		{
-			name: "whiteRook2",
-			id: "g3416"
+			name: "whiteBishop2",
+			id: "g3010",
+			square: "f1",
+		},
+		{
+			name: "whiteKing",
+			id: "g82263",
+			square: "e1",
+		},
+		{
+			name: "whiteQueen",
+			id: "g80246",
+			square: "d1",
+		},
+		{
+			name: "whiteBishop1",
+			id: "g3388",
+			square: "c1",
+		},
+		{
+			name: "whiteKnight1",
+			id: "g60695",
+			square: "b1",
+		},
+		{
+			name: "whiteRook1",
+			id: "g3416",
+			square: "a1",
 		},
 
 		{
@@ -196,6 +204,55 @@ function Board() {
 			console.log("Current Move: " + this.move.m1 + this.move.m2);
 		}
 
+
+	}
+
+	this.getPiece = function(piece) {
+		for(i in this.pieces) {
+			if (this.pieces[i].name == piece) {
+				return this.pieces[i];
+			}
+		}
+		return undefined;
+	}
+
+	this.getSquare = function(square) {
+		for(i in this.squares) {
+			if (this.squares[i].name == square) {
+				return this.squares[i];
+			}
+		}
+		return undefined;
+	}
+
+	this.getDifference = function (l1, l0) {
+
+		var n1 = l1.charCodeAt(0);
+		var n0 = l0.charCodeAt(0);
+
+		var diff1 = n1 - n0;
+		n1 = l1.charCodeAt(1);
+		n0 = l0.charCodeAt(1);
+
+		var diff2 = n1 - n0;
+
+		return {x:diff1, y:diff2};
+	}
+
+	this.placePiece = function(piece, square) {
+		var p = this.getPiece(piece);
+		var dest = this.getSquare(square); 
+		var src = this.getSquare(p.square);
+
+		var svg = $("svg").get(0);
+		var p_svg = $("#" + p.id).get(0);
+
+		var offset = this.getDifference(dest.name, src.name);
+		var t7 = svg.createSVGTransform();
+		t7.setTranslate(offset.x * -150, 1 * offset.y * 150);
+
+		console.log(offset);
+		p_svg.transform.baseVal.insertItemBefore(t7, 0); 
 	}
 }
 
@@ -253,5 +310,8 @@ $(document).ready( function () {
 			theBoard.click(theBoard.squares2[this.id]);
  		});
 		rotateBoard();
+		theBoard.placePiece("whiteKing", "e3");
+		theBoard.placePiece("whiteBishop2", "e4");
+		theBoard.placePiece("whiteKnight2", "e6");
 	});
 });
