@@ -16,13 +16,14 @@ function Game() {
 	this.child = spawn(
 		'/usr/games/gnuchess', ['--uci'],
 		{
+			detached: true,
     			stdio: ['pipe', 'pipe', 'pipe'],
 		}
 	);
 
 	var gameScope = this;
 	this.child.stdout.on("data", function(data) {
-		console.log("Data1: " + data);
+		//console.log("Data1: " + data);
 		var regexp = /bestmove\s(\S+)($|\s)/;
 		var match = regexp.exec(data);
 
@@ -35,11 +36,24 @@ function Game() {
 		console.log(cmd);
 		this.child.stdin.write(cmd, 'utf8');
 	}
+
+	this.child.on("disconnect", function(data) {
+		console.log("Disconnect: " + data);
+	});
+	this.child.on("error", function(data) {
+		console.log("Error: " + data);
+	});
+	this.child.on("close", function(code, signal) {
+		console.log("Close Code: " + code);
+		console.log("Close Signal: " + signal);
+	});
 }
 
 util.inherits(Game, EventEmitter);
 
 var theGame = new Game();
+theGame.write("ucinewgame");
+theGame.write("position startpos moves e2e4");
 
 exports.move = function(req, res){
 
