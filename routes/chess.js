@@ -3,8 +3,8 @@
  * GET users listing.
  */
 
-const util = require('util');
-const EventEmitter = require('events');
+var util = require('util');
+var EventEmitter = require('events');
 
 var fs = require('fs');
 var spawn = require('child_process').spawn;

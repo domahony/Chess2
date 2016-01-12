@@ -31,7 +31,7 @@ function Board() {
 
 	this.squares2 = {};
 
-	var i
+	var i;
 	for(i in this.squares) {
 		this.squares2[this.squares[i].id] = this.squares[i].name;
 	}
@@ -79,104 +79,128 @@ function Board() {
 		},
 
 		{
-			name: "whitePawn1",
-			id: "path3444"
-		},
-		{
-			name: "whitePawn2",
-			id: "path3442"
-		},
-		{
-			name: "whitePawn3",
-			id: "path3440"
-		},
-		{
-			name: "whitePawn4",
-			id: "path3438"
-		},
-		{
-			name: "whitePawn5",
-			id: "path3436"
-		},
-		{
-			name: "whitePawn6",
-			id: "path3434"
+			name: "whitePawn8",
+			id: "path3444",
+			square: "h2",
 		},
 		{
 			name: "whitePawn7",
-			id: "path3432"
+			id: "path3442",
+			square: "g2",
 		},
 		{
-			name: "whitePawn8",
-			id: "path2575"
+			name: "whitePawn6",
+			id: "path3440",
+			square: "f2",
+		},
+		{
+			name: "whitePawn5",
+			id: "path3438",
+			square: "e2",
+		},
+		{
+			name: "whitePawn4",
+			id: "path3436",
+			square: "d2",
+		},
+		{
+			name: "whitePawn3",
+			id: "path3434",
+			square: "c2",
+		},
+		{
+			name: "whitePawn2",
+			id: "path3432",
+			square: "b2",
+		},
+		{
+			name: "whitePawn1",
+			id: "path2575",
+			square: "a2",
 		},
 
 
 		{
 			name: "blackRook1",
-			id: "g46309"
+			id: "g46309",
+			square: "h8",
 		},
 		{
 			name: "blackKnight1",
-			id: "g60728"
+			id: "g60728",
+			square: "g8",
 		},
 		{
 			name: "blackBishop1",
-			id: "g63721"
+			id: "g63721",
+			square: "f8",
 		},
 		{
 			name: "blackKing",
-			id: "g70004"
+			id: "g70004",
+			square: "e8",
 		},
 		{
 			name: "blackQueen",
-			id: "g67023"
+			id: "g67023",
+			square: "d8",
 		},
 		{
 			name: "blackBishop2",
-			id: "g63818"
+			id: "g63818",
+			square: "c8",
 		},
 		{
 			name: "blackKnight2",
-			id: "g49858"
+			id: "g49858",
+			square: "b8",
 		},
 		{
 			name: "blackRook2",
-			id: "g46345"
+			id: "g46345",
+			square: "a8",
 		},
 
 		{
-			name: "blackPawn1",
-			id: "path3194"
-		},
-		{
-			name: "blackPawn2",
-			id: "path17042"
-		},
-		{
-			name: "blackPawn3",
-			id: "path17044"
-		},
-
-		{
-			name: "blackPawn4",
-			id: "path17046"
-		},
-		{
-			name: "blackPawn5",
-			id: "path17048"
-		},
-		{
-			name: "blackPawn6",
-			id: "path17050"
+			name: "blackPawn8",
+			id: "path3194",
+			square: "h7",
 		},
 		{
 			name: "blackPawn7",
-			id: "path17052"
+			id: "path17042",
+			square: "g7",
 		},
 		{
-			name: "blackPawn8",
-			id: "path17054"
+			name: "blackPawn6",
+			id: "path17044",
+			square: "f7",
+		},
+
+		{
+			name: "blackPawn5",
+			id: "path17046",
+			square: "e7",
+		},
+		{
+			name: "blackPawn4",
+			id: "path17048",
+			square: "d7",
+		},
+		{
+			name: "blackPawn3",
+			id: "path17050",
+			square: "c7",
+		},
+		{
+			name: "blackPawn2",
+			id: "path17052",
+			square: "b7",
+		},
+		{
+			name: "blackPawn1",
+			id: "path17054",
+			square: "a7",
 		},
 	];
 
@@ -185,7 +209,25 @@ function Board() {
 		m2: "",
 	};
 
-	this.click = function(square) {
+	this.click = function(sid) {
+		
+		var i;
+		var sname;
+		for(i in this.squares) {
+			if (this.squares[i].id == sid) {
+				sname = this.squares[i].name;
+			}
+		}
+		console.log(sname);
+		
+		var j;
+		for (j in this.pieces) {
+			if (this.pieces[j].square == sname) {
+				console.log("Clicked Piece: " + this.pieces[j].name);
+			}
+		}
+		
+		return;
 
 		if (this.move.m1 != "" && this.move.m2 != "") {
 			this.move.m1 = square;
@@ -253,6 +295,8 @@ function Board() {
 
 		console.log(offset);
 		p_svg.transform.baseVal.insertItemBefore(t7, 0); 
+		
+		p.square = dest.name;
 	}
 }
 
@@ -304,14 +348,23 @@ $(document).ready( function () {
 
 		$("svg").get(0).currentScale = .40;
  		$("rect").click(this, function (evt) {
+ 			
+ 			/*
 			console.log(this.id + " Clicked! " 
 				+ this + " " + evt.target);
 			console.log(theBoard.squares2[this.id]);
-			theBoard.click(theBoard.squares2[this.id]);
+			*/
+			
+			theBoard.click(this.id);
+			
+			
  		});
 		rotateBoard();
 		theBoard.placePiece("whiteKing", "e3");
 		theBoard.placePiece("whiteBishop2", "e4");
 		theBoard.placePiece("whiteKnight2", "e6");
+		theBoard.placePiece("whitePawn1", "c3");
+		theBoard.placePiece("whitePawn6", "f6");
+		theBoard.placePiece("blackPawn6", "f3");
 	});
 });
