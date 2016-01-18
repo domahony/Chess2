@@ -1,5 +1,58 @@
 
+function Piece(name, id, square, owner, directions) {
+	this.name = name;
+	this.id = id;
+	this.square = square;
+	this.owner = owner;
+	this.directions = directions;
+}
+
+var RookMoves =	[ 
+	{ moves: [
+	          {x: -1, y: 0}, {x: -2, y: 0}, {x: -3, y: 0}, {x: -4, y: 0}, 
+	          {x: -5, y: 0}, {x: -6, y: 0}, {x: -7, y: 0}, 
+	]},
+	{ moves: [	
+	          {x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}, {x: 4, y: 0}, 
+	          {x: 5, y: 0}, {x: 6, y: 0}, {x: 7, y: 0}, 
+	]},
+	{ moves: [
+	          {x: 0, y: 1}, {x: 0, y: 2}, {x: 0, y: 3}, {x: 0, y: 4}, 
+	          {x: 0, y: 5}, {x: 0, y: 6}, {x: 0, y: 7}, 
+	]},
+	{ moves: [	
+	          {x: 0, y: -1}, {x: 0, y: -2}, {x: 0, y: -3}, {x: 0, y: -4}, 
+	          {x: 0, y: -5}, {x: 0, y: -6}, {x: 0, y: -7}, 
+	]},			
+];
+
+var KnightMoves = [
+	{ moves: [
+         {x: 2, y: 1}, {x: 2, y: -1},  {x: -2, y: 1}, 
+         {x: -2, y: -1},  {x: 1, y: 2}, {x: 1, y: -2},  
+         {x: -1, y: 2}, {x: -1, y: -2}, 
+    ]},
+];
+
+var BishopMoves = [
+                   
+	{ moves: [{x:1, y:1}, {x:2, y: 2}, {x:3, y:3}, {x:4, y:4}, {x:5, y:5}, {x:6, y:6}, {x:7, y:7}] },
+	{ moves: [{x:-1, y:1}, {x:-2, y: 2}, {x:-3, y:3}, {x:-4, y:4}, {x:-5, y:5}, {x:-6, y:6}, {x:-7, y:7}] },
+	{ moves: [{x:1, y:-1}, {x:2, y: -2}, {x:3, y:-3}, {x:4, y:-4}, {x:5, y:-5}, {x:6, y:-6}, {x:7, y:-7}] },
+	{ moves: [{x:-1, y:-1}, {x:-2, y: -2}, {x:-3, y:-3}, {x:-4, y:-4}, {x:-5, y:-5}, {x:-6, y:-6}, {x:-7, y:-7}] },
+
+];
+
+var KingMoves;
+var QueenMoves;
+var BlackPawnMoves;
+var WhitePawnMoves = [
+	{moves: [ {x:0, y:1}, {x:0, y:2}, {x:1, y:1}, {x:-1, y:1}, ]}                      
+];
+
 function Board() {
+	
+	this.toPlay = "WHITE";
 
 	this.squares = [
 
@@ -28,6 +81,72 @@ function Board() {
 	{id:"rect4040", name:"a5"}, {id:"rect4036", name:"a6"}, {id:"rect4004", name:"a7"}, {id:"rect3990", name:"a8"},
 
 	];
+	
+	this.getValidMoves = function(theSquare, thePiece) {
+		
+		var ret = []; 
+		var d;
+		for (d in thePiece.directions) {
+			
+			var dir = thePiece.directions[d];
+			var m;
+			
+			for (m in dir.moves) {
+				var sq = theBoard.getSquareByOffset(theSquare, dir.moves[m]);
+			
+				if (sq == null) {
+					continue;
+				}
+			
+				console.log(sq);
+				var p = theBoard.getPieceAtSquare(sq.name);
+			
+				if (p != null) {
+					
+					if (this.toPlay != p.owner) {
+						ret.push(sq);
+						console.log(p)
+					}
+					break;
+				} else {
+					ret.push(sq);
+				}
+			}
+		}
+		
+		return ret;
+	}
+	
+	this.getPieceAtSquare = function(sname) {
+		
+		var p;
+		for (p in this.pieces) {
+			
+			if (this.pieces[p].square == sname) {
+				return this.pieces[p];
+			}
+		}
+		return null;
+		
+	}
+	
+	this.getSquareByOffset = function (sq, offset) {
+		var squareName = sq.name;
+		var sq_x = squareName.charCodeAt(0);
+		var sq_y = squareName.charCodeAt(1);
+		var dest = {
+				x:  sq_x + offset.x,
+				y: sq_y + offset.y,
+		};
+		
+		if (dest.x < "a".charCodeAt(0) || dest.x > "h".charCodeAt(0)
+				|| dest.y < "1".charCodeAt(0) || dest.y > "8".charCodeAt(0)) {
+			return null;
+		}
+		
+		var destName = String.fromCharCode(dest.x, dest.y);
+		return this.getSquare(destName);
+	}
 
 	this.squares2 = {};
 
@@ -35,172 +154,148 @@ function Board() {
 	for(i in this.squares) {
 		this.squares2[this.squares[i].id] = this.squares[i].name;
 	}
-
+	
+	/*
 	this.pieces = [
 		{
 			name: "whiteRook2",
 			id: "g3218",
 			square: "h1",
+			owner: "WHITE",
+			directions: [ 
+			    { moves: [
+			        {x: -1, y: 0}, {x: -2, y: 0}, {x: -3, y: 0}, {x: -4, y: 0}, 
+			        {x: -5, y: 0}, {x: -6, y: 0}, {x: -7, y: 0}, 
+				]},
+				{ moves: [	
+			        {x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}, {x: 4, y: 0}, 
+			        {x: 5, y: 0}, {x: 6, y: 0}, {x: 7, y: 0}, 
+				]},
+				{ moves: [
+			        {x: 0, y: 1}, {x: 0, y: 2}, {x: 0, y: 3}, {x: 0, y: 4}, 
+			        {x: 0, y: 5}, {x: 0, y: 6}, {x: 0, y: 7}, 
+			    ]},
+			    { moves: [	
+			        {x: 0, y: -1}, {x: 0, y: -2}, {x: 0, y: -3}, {x: 0, y: -4}, 
+			        {x: 0, y: -5}, {x: 0, y: -6}, {x: 0, y: -7}, 
+			    ]},			
+			],
 		},
-		{
-			name: "whiteKnight2",
-			id: "g60673",
-			square: "g1",
-		},
-		{
-			name: "whiteBishop2",
-			id: "g3010",
-			square: "f1",
-		},
-		{
-			name: "whiteKing",
-			id: "g82263",
-			square: "e1",
-		},
-		{
-			name: "whiteQueen",
-			id: "g80246",
-			square: "d1",
-		},
-		{
-			name: "whiteBishop1",
-			id: "g3388",
-			square: "c1",
-		},
-		{
-			name: "whiteKnight1",
-			id: "g60695",
-			square: "b1",
-		},
-		{
-			name: "whiteRook1",
-			id: "g3416",
-			square: "a1",
-		},
-
-		{
-			name: "whitePawn8",
-			id: "path3444",
-			square: "h2",
-		},
-		{
-			name: "whitePawn7",
-			id: "path3442",
-			square: "g2",
-		},
-		{
-			name: "whitePawn6",
-			id: "path3440",
-			square: "f2",
-		},
-		{
-			name: "whitePawn5",
-			id: "path3438",
-			square: "e2",
-		},
-		{
-			name: "whitePawn4",
-			id: "path3436",
-			square: "d2",
-		},
-		{
-			name: "whitePawn3",
-			id: "path3434",
-			square: "c2",
-		},
-		{
-			name: "whitePawn2",
-			id: "path3432",
-			square: "b2",
-		},
-		{
-			name: "whitePawn1",
-			id: "path2575",
-			square: "a2",
-		},
-
-
+		*/
+	this.pieces = [
+	               new Piece("whiteRook2", "g3218", "h1", "WHITE", RookMoves),
+	               new Piece("whiteKnight2", "g60673", "g1", "WHITE", KnightMoves),
+	               new Piece("whiteBishop2", "g3010", "f1", "WHITE", BishopMoves),
+	               new Piece("whiteKing", "g82263", "e1", "WHITE", KingMoves),
+	               new Piece("whiteQueen", "g80246", "d1", "WHITE", QueenMoves),
+					new Piece("whiteBishop1", "g3388", "c1", "WHITE", BishopMoves),
+					new Piece("whiteKnight1", "g60695", "b1", "WHITE", KnightMoves),
+					new Piece("whiteRook1", "g3416", "a1", "WHITE", RookMoves),
+					new Piece("whitePawn8", "path3444", "h2", "WHITE", WhitePawnMoves),
+					new Piece("whitePawn7", "path3442", "g2", "WHITE", WhitePawnMoves),
+					new Piece("whitePawn6", "path3440", "f2", "WHITE", WhitePawnMoves),
+					new Piece("whitePawn5", "path3438", "e2", "WHITE", WhitePawnMoves),
+					new Piece("whitePawn4", "path3436", "d2", "WHITE", WhitePawnMoves),
+					new Piece("whitePawn3", "path3434", "c2", "WHITE", WhitePawnMoves),
+					new Piece("whitePawn2", "path3432", "b2", "WHITE", WhitePawnMoves),
+					new Piece("whitePawn1", "path2575", "a2", "WHITE", WhitePawnMoves),
 		{
 			name: "blackRook1",
 			id: "g46309",
 			square: "h8",
+			owner: "BLACK",
 		},
 		{
 			name: "blackKnight1",
 			id: "g60728",
 			square: "g8",
+			owner: "BLACK",
 		},
 		{
 			name: "blackBishop1",
 			id: "g63721",
 			square: "f8",
+			owner: "BLACK",
 		},
 		{
 			name: "blackKing",
 			id: "g70004",
 			square: "e8",
+			owner: "BLACK",
 		},
 		{
 			name: "blackQueen",
 			id: "g67023",
 			square: "d8",
+			owner: "BLACK",
 		},
 		{
 			name: "blackBishop2",
 			id: "g63818",
 			square: "c8",
+			owner: "BLACK",
 		},
 		{
 			name: "blackKnight2",
 			id: "g49858",
 			square: "b8",
+			owner: "BLACK",
 		},
 		{
 			name: "blackRook2",
 			id: "g46345",
 			square: "a8",
+			owner: "BLACK",
 		},
 
 		{
 			name: "blackPawn8",
 			id: "path3194",
 			square: "h7",
+			owner: "BLACK",
 		},
 		{
 			name: "blackPawn7",
 			id: "path17042",
 			square: "g7",
+			owner: "BLACK",
 		},
 		{
 			name: "blackPawn6",
 			id: "path17044",
 			square: "f7",
+			owner: "BLACK",
 		},
 
 		{
 			name: "blackPawn5",
 			id: "path17046",
 			square: "e7",
+			owner: "BLACK",
 		},
 		{
 			name: "blackPawn4",
 			id: "path17048",
 			square: "d7",
+			owner: "BLACK",
 		},
 		{
 			name: "blackPawn3",
 			id: "path17050",
 			square: "c7",
+			owner: "BLACK",
 		},
 		{
 			name: "blackPawn2",
 			id: "path17052",
 			square: "b7",
+			owner: "BLACK",
 		},
 		{
 			name: "blackPawn1",
 			id: "path17054",
 			square: "a7",
+			owner: "BLACK",
 		},
 	];
 
@@ -213,19 +308,27 @@ function Board() {
 		
 		var i;
 		var sname;
+		var theSquare;
 		for(i in this.squares) {
 			if (this.squares[i].id == sid) {
 				sname = this.squares[i].name;
+				theSquare = this.squares[i];
 			}
 		}
 		console.log(sname);
 		
 		var j;
+		var thePiece;
 		for (j in this.pieces) {
 			if (this.pieces[j].square == sname) {
+				thePiece = this.pieces[j];
 				console.log("Clicked Piece: " + this.pieces[j].name);
 			}
 		}
+		
+		var moves = theBoard.getValidMoves(theSquare, thePiece);
+		
+		console.log(moves);
 		
 		return;
 
