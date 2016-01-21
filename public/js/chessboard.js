@@ -27,11 +27,14 @@ var RookMoves =	[
 ];
 
 var KnightMoves = [
-	{ moves: [
-         {x: 2, y: 1}, {x: 2, y: -1},  {x: -2, y: 1}, 
-         {x: -2, y: -1},  {x: 1, y: 2}, {x: 1, y: -2},  
-         {x: -1, y: 2}, {x: -1, y: -2}, 
-    ]},
+	{ moves: [{x: 2, y: 1},  ]},
+	{ moves: [{x: 2, y: -1}, ]},  
+	{ moves: [{x: -2, y: 1}, ]}, 
+	{ moves: [{x: -2, y: -1},]}, 
+	{ moves: [{x: 1, y: 2},  ]}, 
+	{ moves: [{x: 1, y: -2}, ]},  
+    { moves: [{x: -1, y: 2}, ]}, 
+    { moves: [{x: -1, y: -2},]},
 ];
 
 var BishopMoves = [
@@ -43,8 +46,14 @@ var BishopMoves = [
 
 ];
 
-var KingMoves;
-var QueenMoves;
+var KingMoves = [
+                 {moves: [{x: 0, y: 1}]}, {moves: [{x: 0, y: -1}]}, {moves: [{x: 1, y: 0}]},
+                 {moves: [{x: -1, y: 0}]}, {moves: [{x: -1, y: 1}]}, {moves: [{x: 1, y: 1}]},
+                 {moves: [{x: -1, y: -1}]}, {moves: [{x: 1, y: -1}]},
+];
+
+var QueenMoves = BishopMoves.concat(RookMoves);
+
 var BlackPawnMoves;
 var WhitePawnMoves = [
 	{moves: [ {x:0, y:1}, {x:0, y:2}, {x:1, y:1}, {x:-1, y:1}, ]}                      
@@ -52,7 +61,7 @@ var WhitePawnMoves = [
 
 function Board() {
 	
-	this.toPlay = "WHITE";
+	this.toPlay = "BLACK";
 
 	this.squares = [
 
@@ -155,42 +164,16 @@ function Board() {
 		this.squares2[this.squares[i].id] = this.squares[i].name;
 	}
 	
-	/*
 	this.pieces = [
-		{
-			name: "whiteRook2",
-			id: "g3218",
-			square: "h1",
-			owner: "WHITE",
-			directions: [ 
-			    { moves: [
-			        {x: -1, y: 0}, {x: -2, y: 0}, {x: -3, y: 0}, {x: -4, y: 0}, 
-			        {x: -5, y: 0}, {x: -6, y: 0}, {x: -7, y: 0}, 
-				]},
-				{ moves: [	
-			        {x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}, {x: 4, y: 0}, 
-			        {x: 5, y: 0}, {x: 6, y: 0}, {x: 7, y: 0}, 
-				]},
-				{ moves: [
-			        {x: 0, y: 1}, {x: 0, y: 2}, {x: 0, y: 3}, {x: 0, y: 4}, 
-			        {x: 0, y: 5}, {x: 0, y: 6}, {x: 0, y: 7}, 
-			    ]},
-			    { moves: [	
-			        {x: 0, y: -1}, {x: 0, y: -2}, {x: 0, y: -3}, {x: 0, y: -4}, 
-			        {x: 0, y: -5}, {x: 0, y: -6}, {x: 0, y: -7}, 
-			    ]},			
-			],
-		},
-		*/
-	this.pieces = [
-	               new Piece("whiteRook2", "g3218", "h1", "WHITE", RookMoves),
-	               new Piece("whiteKnight2", "g60673", "g1", "WHITE", KnightMoves),
-	               new Piece("whiteBishop2", "g3010", "f1", "WHITE", BishopMoves),
-	               new Piece("whiteKing", "g82263", "e1", "WHITE", KingMoves),
-	               new Piece("whiteQueen", "g80246", "d1", "WHITE", QueenMoves),
-					new Piece("whiteBishop1", "g3388", "c1", "WHITE", BishopMoves),
-					new Piece("whiteKnight1", "g60695", "b1", "WHITE", KnightMoves),
-					new Piece("whiteRook1", "g3416", "a1", "WHITE", RookMoves),
+	               	new Piece("whiteRook2", "g3218", "h1", "WHITE", RookMoves),
+	                new Piece("whiteKnight2", "g60673", "g1", "WHITE", KnightMoves),
+	                new Piece("whiteBishop2", "g3010", "f1", "WHITE", BishopMoves),
+	                new Piece("whiteKing", "g82263", "e1", "WHITE", KingMoves),
+	                new Piece("whiteQueen", "g80246", "d1", "WHITE", QueenMoves),
+				    new Piece("whiteBishop1", "g3388", "c1", "WHITE", BishopMoves),
+				    new Piece("whiteKnight1", "g60695", "b1", "WHITE", KnightMoves),
+				    new Piece("whiteRook1", "g3416", "a1", "WHITE", RookMoves),
+					
 					new Piece("whitePawn8", "path3444", "h2", "WHITE", WhitePawnMoves),
 					new Piece("whitePawn7", "path3442", "g2", "WHITE", WhitePawnMoves),
 					new Piece("whitePawn6", "path3440", "f2", "WHITE", WhitePawnMoves),
@@ -199,104 +182,24 @@ function Board() {
 					new Piece("whitePawn3", "path3434", "c2", "WHITE", WhitePawnMoves),
 					new Piece("whitePawn2", "path3432", "b2", "WHITE", WhitePawnMoves),
 					new Piece("whitePawn1", "path2575", "a2", "WHITE", WhitePawnMoves),
-		{
-			name: "blackRook1",
-			id: "g46309",
-			square: "h8",
-			owner: "BLACK",
-		},
-		{
-			name: "blackKnight1",
-			id: "g60728",
-			square: "g8",
-			owner: "BLACK",
-		},
-		{
-			name: "blackBishop1",
-			id: "g63721",
-			square: "f8",
-			owner: "BLACK",
-		},
-		{
-			name: "blackKing",
-			id: "g70004",
-			square: "e8",
-			owner: "BLACK",
-		},
-		{
-			name: "blackQueen",
-			id: "g67023",
-			square: "d8",
-			owner: "BLACK",
-		},
-		{
-			name: "blackBishop2",
-			id: "g63818",
-			square: "c8",
-			owner: "BLACK",
-		},
-		{
-			name: "blackKnight2",
-			id: "g49858",
-			square: "b8",
-			owner: "BLACK",
-		},
-		{
-			name: "blackRook2",
-			id: "g46345",
-			square: "a8",
-			owner: "BLACK",
-		},
+					
+					new Piece("blackRook1", "g46309", "h8", "BLACK", RookMoves),
+	            	new Piece("blackKnight1", "g60728", "g8", "BLACK", KnightMoves),
+	            	new Piece("blackBishop1", "g63721", "f8", "BLACK", BishopMoves),
+	            	new Piece("blackKing", "g70004", "e8", "BLACK", KingMoves),
+	            	new Piece("blackQueen", "g67023", "d8", "BLACK", QueenMoves),
+	            	new Piece("blackBishop2", "g63818", "c8", "BLACK", BishopMoves),
+	            	new Piece("blackKnight2", "g49858", "b8", "BLACK", KnightMoves),
+	            	new Piece("blackRook2", "g46345", "a8", "BLACK", RookMoves),
 
-		{
-			name: "blackPawn8",
-			id: "path3194",
-			square: "h7",
-			owner: "BLACK",
-		},
-		{
-			name: "blackPawn7",
-			id: "path17042",
-			square: "g7",
-			owner: "BLACK",
-		},
-		{
-			name: "blackPawn6",
-			id: "path17044",
-			square: "f7",
-			owner: "BLACK",
-		},
-
-		{
-			name: "blackPawn5",
-			id: "path17046",
-			square: "e7",
-			owner: "BLACK",
-		},
-		{
-			name: "blackPawn4",
-			id: "path17048",
-			square: "d7",
-			owner: "BLACK",
-		},
-		{
-			name: "blackPawn3",
-			id: "path17050",
-			square: "c7",
-			owner: "BLACK",
-		},
-		{
-			name: "blackPawn2",
-			id: "path17052",
-			square: "b7",
-			owner: "BLACK",
-		},
-		{
-			name: "blackPawn1",
-			id: "path17054",
-			square: "a7",
-			owner: "BLACK",
-		},
+	            	new Piece("blackPawn8", "path3194", "h7", "BLACK", BlackPawnMoves),
+	            	new Piece("blackPawn7", "path17042", "g7", "BLACK", BlackPawnMoves),
+	            	new Piece("blackPawn6", "path17044", "f7", "BLACK", BlackPawnMoves),
+	            	new Piece("blackPawn5", "path17046", "e7", "BLACK", BlackPawnMoves),
+	            	new Piece("blackPawn4", "path17048", "d7", "BLACK", BlackPawnMoves), 
+	            	new Piece("blackPawn3", "path17050", "c7", "BLACK", BlackPawnMoves),
+	            	new Piece("blackPawn2", "path17052", "b7", "BLACK", BlackPawnMoves),
+	            	new Piece("blackPawn1", "path17054", "a7", "BLACK", BlackPawnMoves),
 	];
 
 	this.move = {
