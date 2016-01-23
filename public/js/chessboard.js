@@ -5,9 +5,13 @@ function Piece(name, id, square, owner, directions) {
 	this.square = square;
 	this.owner = owner;
 	this.directions = directions;
+	this.moved = false;
+	this.first_move = function() {
+		return this.moved === false;
+	};
 }
 
-var RookMoves =	[ 
+var RookMoves =	{modifier: function(piece, moves) {return moves;}, move_list: [ 
 	{ moves: [
 	          {x: -1, y: 0}, {x: -2, y: 0}, {x: -3, y: 0}, {x: -4, y: 0}, 
 	          {x: -5, y: 0}, {x: -6, y: 0}, {x: -7, y: 0}, 
@@ -24,9 +28,9 @@ var RookMoves =	[
 	          {x: 0, y: -1}, {x: 0, y: -2}, {x: 0, y: -3}, {x: 0, y: -4}, 
 	          {x: 0, y: -5}, {x: 0, y: -6}, {x: 0, y: -7}, 
 	]},			
-];
+]};
 
-var KnightMoves = [
+var KnightMoves = {modifier: function(piece, moves) {return moves;}, move_list: [
 	{ moves: [{x: 2, y: 1},  ]},
 	{ moves: [{x: 2, y: -1}, ]},  
 	{ moves: [{x: -2, y: 1}, ]}, 
@@ -35,29 +39,81 @@ var KnightMoves = [
 	{ moves: [{x: 1, y: -2}, ]},  
     { moves: [{x: -1, y: 2}, ]}, 
     { moves: [{x: -1, y: -2},]},
-];
+]};
 
-var BishopMoves = [
+var BishopMoves = {modifier: function(piece, moves) {return moves;}, move_list: [
                    
 	{ moves: [{x:1, y:1}, {x:2, y: 2}, {x:3, y:3}, {x:4, y:4}, {x:5, y:5}, {x:6, y:6}, {x:7, y:7}] },
 	{ moves: [{x:-1, y:1}, {x:-2, y: 2}, {x:-3, y:3}, {x:-4, y:4}, {x:-5, y:5}, {x:-6, y:6}, {x:-7, y:7}] },
 	{ moves: [{x:1, y:-1}, {x:2, y: -2}, {x:3, y:-3}, {x:4, y:-4}, {x:5, y:-5}, {x:6, y:-6}, {x:7, y:-7}] },
 	{ moves: [{x:-1, y:-1}, {x:-2, y: -2}, {x:-3, y:-3}, {x:-4, y:-4}, {x:-5, y:-5}, {x:-6, y:-6}, {x:-7, y:-7}] },
 
-];
+]};
 
-var KingMoves = [
+function KingMoveModifier(piece, moves) {
+	
+	if (piece.can_castle()) {
+		return moves;
+	}
+	
+	return moves;
+}
+
+var KingMoves = {modifier: KingMoveModifier, move_list: [
                  {moves: [{x: 0, y: 1}]}, {moves: [{x: 0, y: -1}]}, {moves: [{x: 1, y: 0}]},
                  {moves: [{x: -1, y: 0}]}, {moves: [{x: -1, y: 1}]}, {moves: [{x: 1, y: 1}]},
                  {moves: [{x: -1, y: -1}]}, {moves: [{x: 1, y: -1}]},
-];
+]};
 
-var QueenMoves = BishopMoves.concat(RookMoves);
+var QueenMoves = {
+		modifier: function(piece, moves) {return moves;}, 
+		move_list: BishopMoves.move_list.concat(RookMoves),
+};
 
-var BlackPawnMoves;
-var WhitePawnMoves = [
-	{moves: [ {x:0, y:1}, {x:0, y:2}, {x:1, y:1}, {x:-1, y:1}, ]}                      
-];
+function BlackPawnModifier(piece, moves) {
+	
+	if (piece.first_move()) {
+		moves.concat({x: 0, y: -2});
+	}
+	
+	var pmove = {x:1, y:-1};
+	if (theBoard.captureable(piece.square, pmove)) {
+		moves.concat(pmove);
+	}
+	
+	pmove = {x:-1, y:-1};
+	if (theBoard.captureable(piece.square, pmove)) {
+		moves.concat(pmove);
+	}
+	
+	return moves;
+}
+
+function WhitePawnModifier(piece, moves) {
+	if (piece.first_move()) {
+		moves.concat({x: 0, y: 2});
+	}
+	
+	var pmove = {x:1, y:1};
+	if (theBoard.captureable(piece.square, pmove)) {
+		moves.concat(pmove);
+	}
+	
+	pmove = {x:-1, y:1};
+	if (theBoard.captureable(piece.square, pmove)) {
+		moves.concat(pmove);
+	}
+	
+	return moves;
+}
+
+var BlackPawnMoves = {modifier: BlackPawnModifier, move_list: [
+	{moves: [ {x:0, y:-1} ]}                      
+]};
+
+var WhitePawnMoves = {modifier: WhitePawnModifier, move_list: [
+	{moves: [ {x:0, y:1} ]}                      
+]};
 
 function Board() {
 	
@@ -95,9 +151,9 @@ function Board() {
 		
 		var ret = []; 
 		var d;
-		for (d in thePiece.directions) {
+		for (d in thePiece.directions.move_list) {
 			
-			var dir = thePiece.directions[d];
+			var dir = thePiece.directions.move_list[d];
 			var m;
 			
 			for (m in dir.moves) {
@@ -123,7 +179,7 @@ function Board() {
 			}
 		}
 		
-		return ret;
+		return thePiece.directions.modifier(thePiece, ret);
 	}
 	
 	this.getPieceAtSquare = function(sname) {
@@ -366,11 +422,13 @@ $(document).ready( function () {
 			
  		});
 		rotateBoard();
+		/*
 		theBoard.placePiece("whiteKing", "e3");
 		theBoard.placePiece("whiteBishop2", "e4");
 		theBoard.placePiece("whiteKnight2", "e6");
 		theBoard.placePiece("whitePawn1", "c3");
 		theBoard.placePiece("whitePawn6", "f6");
 		theBoard.placePiece("blackPawn6", "f3");
+		*/
 	});
 });
