@@ -1,3 +1,18 @@
+function createStyle(d) {
+	return function() {
+		var ret = d.createElementNS("http://www.w3.org/2000/svg", "style");
+		ret.setAttribute("type", "text/css");
+		var path = d.createTextNode("path {pointer-events: none;} ");
+		var selected = d.createTextNode("rect.selected {fill: none; stroke-width: 15; stroke: yellow; } ");
+		var targeted = d.createTextNode("rect.targeted {fill: none; stroke-width: 15; stroke: green; } ");
+		var unselected = d.createTextNode("rect.unselected {fill: none; stroke-width: 1; stroke: none; } ");
+		ret.appendChild(path);
+		ret.appendChild(selected);
+		ret.appendChild(unselected);
+		ret.appendChild(targeted);
+		return ret;
+	};	
+}
 
 function Piece(name, id, square, owner, directions) {
 	this.name = name;
@@ -262,14 +277,39 @@ function Board() {
 		m1: "",
 		m2: "",
 	};
-
+	
+	this.selected = null;
+	
+	this.select = function(sid) {
+ 			
+ 			var ret = sid.cloneNode(true);
+ 			ret.setAttribute("class", "selected");
+ 			ret.setAttribute("id", sid.id + "-wrapper");
+ 			ret.removeAttribute("style");
+ 			
+ 			if (this.selected !== null) {
+ 				sid.parentNode.replaceChild(ret, this.selected);
+ 			} else {
+ 				sid.parentNode.appendChild(ret);
+ 			}
+ 			
+ 			this.selected = ret;
+ 			
+			//this.setAttribute("class", "selected");
+			//this.removeAttribute("style");
+			console.log(ret);
+	};
+			
 	this.click = function(sid) {
+		
+		this.select(sid);
+		var sid_id = sid.id;
 		
 		var i;
 		var sname;
 		var theSquare;
 		for(i in this.squares) {
-			if (this.squares[i].id == sid) {
+			if (this.squares[i].id == sid_id) {
 				sname = this.squares[i].name;
 				theSquare = this.squares[i];
 			}
@@ -410,17 +450,11 @@ $(document).ready( function () {
 
 		$("svg").get(0).currentScale = .40;
  		$("rect").click(this, function (evt) {
- 			
- 			/*
-			console.log(this.id + " Clicked! " 
-				+ this + " " + evt.target);
-			console.log(theBoard.squares2[this.id]);
-			*/
-			
-			theBoard.click(this.id);
-			
-			
+			theBoard.click(this);
  		});
+ 		
+ 		$("svg").find("defs").append(createStyle(data));	
+ 		
 		rotateBoard();
 		/*
 		theBoard.placePiece("whiteKing", "e3");
