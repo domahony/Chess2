@@ -3,13 +3,13 @@ function createStyle(d) {
 		var ret = d.createElementNS("http://www.w3.org/2000/svg", "style");
 		ret.setAttribute("type", "text/css");
 		var path = d.createTextNode("path {pointer-events: none;} ");
-		var selected = d.createTextNode("rect.selected {fill: none; stroke-width: 15; stroke: yellow; } ");
-		var targeted = d.createTextNode("rect.targeted {fill: none; stroke-width: 15; stroke: green; } ");
+		var selected = d.createTextNode("rect.selected {fill: none; stroke-width: 15; stroke: green; } ");
+		var hilighted = d.createTextNode("rect.hilight {fill: none; stroke-width: 15; stroke: yellow; } ");
 		var unselected = d.createTextNode("rect.unselected {fill: none; stroke-width: 1; stroke: none; } ");
 		ret.appendChild(path);
 		ret.appendChild(selected);
 		ret.appendChild(unselected);
-		ret.appendChild(targeted);
+		ret.appendChild(hilighted);
 		return ret;
 	};	
 }
@@ -67,8 +67,12 @@ var BishopMoves = {modifier: function(piece, moves) {return moves;}, move_list: 
 
 function KingMoveModifier(piece, moves) {
 	
-	if (piece.can_castle()) {
-		return moves;
+	if (theBoard.isValidShortCastle(piece)) {
+		moves.push({x: 2, y: 0});
+	}
+	
+	if (theBoard.isValidLongCastle(piece)) {
+		moves.push({x: -3, y: 0});
 	}
 	
 	return moves;
@@ -87,52 +91,66 @@ var QueenMoves = {
 
 function BlackPawnModifier(piece, moves) {
 	
-	if (piece.first_move()) {
-		moves.concat({x: 0, y: -2});
+	var pmove = {x:0, y:-1};
+	
+	if (!theBoard.isOccupied(piece.square, pmove)) {
+		
+		moves.push(pmove);
+		pmove = {x:0, y:-2};
+		if (piece.first_move()) {
+			if (!theBoard.isOccupied(piece.square, pmove)) {
+				moves.push(pmove);
+			}	
+		}
+	
 	}
 	
-	var pmove = {x:1, y:-1};
-	if (theBoard.captureable(piece.square, pmove)) {
-		moves.concat(pmove);
+	pmove = {x:1, y:-1};
+	if (theBoard.isValidCapture(piece.square, pmove)) {
+		moves.push(pmove);
 	}
 	
 	pmove = {x:-1, y:-1};
-	if (theBoard.captureable(piece.square, pmove)) {
-		moves.concat(pmove);
+	if (theBoard.isValidCapture(piece.square, pmove)) {
+		moves.push(pmove);
 	}
 	
 	return moves;
 }
 
 function WhitePawnModifier(piece, moves) {
-	if (piece.first_move()) {
-		moves.concat({x: 0, y: 2});
+	var pmove = {x:0, y:1};
+	
+	if (!theBoard.isOccupied(piece.square, pmove)) {
+		
+		moves.push(pmove);
+		pmove = {x:0, y:2};
+		if (piece.first_move()) {
+			if (!theBoard.isOccupied(piece.square, pmove)) {
+				moves.push(pmove);
+			}	
+		}
+	
 	}
 	
-	var pmove = {x:1, y:1};
-	if (theBoard.captureable(piece.square, pmove)) {
-		moves.concat(pmove);
+	pmove = {x:1, y:1};
+	if (theBoard.isValidCapture(piece.square, pmove)) {
+		moves.push(pmove);
 	}
 	
 	pmove = {x:-1, y:1};
-	if (theBoard.captureable(piece.square, pmove)) {
-		moves.concat(pmove);
+	if (theBoard.isValidCapture(piece.square, pmove)) {
+		moves.push(pmove);
 	}
-	
 	return moves;
 }
 
-var BlackPawnMoves = {modifier: BlackPawnModifier, move_list: [
-	{moves: [ {x:0, y:-1} ]}                      
-]};
-
-var WhitePawnMoves = {modifier: WhitePawnModifier, move_list: [
-	{moves: [ {x:0, y:1} ]}                      
-]};
+var BlackPawnMoves = {modifier: BlackPawnModifier, move_list: []};
+var WhitePawnMoves = {modifier: WhitePawnModifier, move_list: []};
 
 function Board() {
 	
-	this.toPlay = "BLACK";
+	this.toPlay = "WHITE";
 
 	this.squares = [
 
@@ -161,6 +179,56 @@ function Board() {
 	{id:"rect4040", name:"a5"}, {id:"rect4036", name:"a6"}, {id:"rect4004", name:"a7"}, {id:"rect3990", name:"a8"},
 
 	];
+	
+	this.isValidShortCastle = function(piece) {
+		// check if this piece is moved
+		// check if this short rook is moved
+		// check if occupied x+1, x+2
+		// check if x+1 or x+2 is being attacked
+	}
+	
+	this.isValidLongCastle = function(piece) {
+		// check if this piece is moved
+		// check if this long rook is moved
+		// check if occupied x-1, x-2, x-3
+		// check if attacked x-1, x-2, x-3
+	}
+	
+	this.isOccupied = function(sname, move) {
+		var ret = false;
+		var square = this.getSquare(sname);
+		var sq = this.getSquareByOffset(square, move);
+		
+		if (sq == null) {
+			return ret;
+		}
+		
+		var p = this.getPieceAtSquare(sq.name);	
+		console.log(p !== null);
+		
+		return p !== null;
+	}
+	
+	this.isValidCapture = function(sname, move) {
+		var ret = false;
+		var square = this.getSquare(sname);
+		var sq = this.getSquareByOffset(square, move);
+		
+		if (sq == null) {
+			return ret;
+		}
+		
+		var p = this.getPieceAtSquare(sq.name);
+		
+		if (p !== null) {
+			if (this.toPlay !== p.owner) {
+				ret = true;
+				console.log(p)
+			}
+		}
+		
+		return ret;
+	};
 	
 	this.getValidMoves = function(theSquare, thePiece) {
 		
@@ -299,6 +367,21 @@ function Board() {
 			//this.removeAttribute("style");
 			console.log(ret);
 	};
+	
+	this.hilighted = [];
+	this.hilight = function(sid) {
+		
+		console.log("HILIGHT: ");
+		console.log(sid);
+	 		var ret = sid.cloneNode(true);
+ 			ret.setAttribute("class", "hilight");
+ 			ret.setAttribute("id", sid.id + "-wrapper");
+ 			ret.removeAttribute("style");
+ 			
+ 			sid.parentNode.appendChild(ret);
+ 			
+ 			this.hilighted.push(ret);
+	}
 			
 	this.click = function(sid) {
 		
@@ -326,6 +409,13 @@ function Board() {
 		}
 		
 		var moves = theBoard.getValidMoves(theSquare, thePiece);
+		
+		for (i in moves) {
+			var sq = this.getSquareByOffset(theSquare, moves[i]);
+			var e = $("#" + sq.id).get(0);
+			console.log(e);
+			this.hilight(e);
+		}
 		
 		console.log(moves);
 		
