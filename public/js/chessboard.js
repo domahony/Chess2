@@ -3,9 +3,15 @@ function createStyle(d) {
 		var ret = d.createElementNS("http://www.w3.org/2000/svg", "style");
 		ret.setAttribute("type", "text/css");
 		var path = d.createTextNode("path {pointer-events: none;} ");
-		var selected = d.createTextNode("rect.selected {fill: none; stroke-width: 15; stroke: green; } ");
-		var hilighted = d.createTextNode("rect.hilight {fill: none; stroke-width: 15; stroke: yellow; } ");
-		var unselected = d.createTextNode("rect.unselected {fill: none; stroke-width: 1; stroke: none; } ");
+		var selected = d.createTextNode(
+				"rect.selected {fill: none; stroke-width: 15; stroke: green; pointer-events: all;} "
+				);
+		var hilighted = d.createTextNode(
+				"rect.hilight {fill: none; stroke-width: 15; stroke: yellow; pointer-events: all;} "
+				);
+		var unselected = d.createTextNode(
+				"rect.unselected {fill: none; stroke-width: 1; stroke: none; pointer-events: none;} "
+				);
 		ret.appendChild(path);
 		ret.appendChild(selected);
 		ret.appendChild(unselected);
@@ -92,57 +98,68 @@ var QueenMoves = {
 function BlackPawnModifier(piece, moves) {
 	
 	var pmove = {x:0, y:-1};
-	
+	var ret = moves.slice(0);
+
 	if (!theBoard.isOccupied(piece.square, pmove)) {
 		
-		moves.push(pmove);
+		var m = {
+				moves: [],	
+		};
+		
+		m.moves.push(pmove);
 		pmove = {x:0, y:-2};
 		if (piece.first_move()) {
 			if (!theBoard.isOccupied(piece.square, pmove)) {
-				moves.push(pmove);
+				m.moves.push(pmove);
 			}	
 		}
-	
+		ret.push(m);
 	}
 	
 	pmove = {x:1, y:-1};
 	if (theBoard.isValidCapture(piece.square, pmove)) {
-		moves.push(pmove);
+		ret.push({moves: [pmove]});
 	}
 	
 	pmove = {x:-1, y:-1};
 	if (theBoard.isValidCapture(piece.square, pmove)) {
-		moves.push(pmove);
+		ret.push({moves: [pmove]});
 	}
 	
-	return moves;
+	return ret;
 }
 
 function WhitePawnModifier(piece, moves) {
 	var pmove = {x:0, y:1};
-	
+	var ret = moves.slice(0);
+
 	if (!theBoard.isOccupied(piece.square, pmove)) {
 		
-		moves.push(pmove);
+		var m = {
+				moves: [],	
+		};
+		
+		m.moves.push(pmove);
 		pmove = {x:0, y:2};
 		if (piece.first_move()) {
 			if (!theBoard.isOccupied(piece.square, pmove)) {
-				moves.push(pmove);
+				m.moves.push(pmove);
 			}	
 		}
-	
+		ret.push(m);
 	}
 	
 	pmove = {x:1, y:1};
 	if (theBoard.isValidCapture(piece.square, pmove)) {
-		moves.push(pmove);
+		ret.push({moves: [pmove]});
 	}
 	
 	pmove = {x:-1, y:1};
 	if (theBoard.isValidCapture(piece.square, pmove)) {
-		moves.push(pmove);
+		ret.push({moves: [pmove]});
 	}
-	return moves;
+	
+	return ret;
 }
 
 var BlackPawnMoves = {modifier: BlackPawnModifier, move_list: []};
@@ -223,7 +240,7 @@ function Board() {
 		if (p !== null) {
 			if (this.toPlay !== p.owner) {
 				ret = true;
-				console.log(p)
+				console.log(p);
 			}
 		}
 		
@@ -234,9 +251,13 @@ function Board() {
 		
 		var ret = []; 
 		var d;
-		for (d in thePiece.directions.move_list) {
+		
+		var move_list = thePiece.directions.modifier(
+				thePiece, thePiece.directions.move_list); 
+		
+		for (d in move_list) {
 			
-			var dir = thePiece.directions.move_list[d];
+			var dir = move_list[d];
 			var m;
 			
 			for (m in dir.moves) {
@@ -253,7 +274,7 @@ function Board() {
 					
 					if (this.toPlay != p.owner) {
 						ret.push(sq);
-						console.log(p)
+						console.log(p);
 					}
 					break;
 				} else {
@@ -262,7 +283,7 @@ function Board() {
 			}
 		}
 		
-		return thePiece.directions.modifier(thePiece, ret);
+		return ret; 
 	}
 	
 	this.getPieceAtSquare = function(sname) {
@@ -346,6 +367,16 @@ function Board() {
 		m2: "",
 	};
 	
+	this.dehilight = function() {
+		var h;
+		for (h in this.hilighted) {
+			var n = this.hilighted[h];
+			n.parentNode.removeChild(n);
+		}
+ 				
+		this.hilighted = [];		
+	};
+	
 	this.selected = null;
 	
 	this.select = function(sid) {
@@ -361,33 +392,42 @@ function Board() {
  				sid.parentNode.appendChild(ret);
  			}
  			
- 			this.selected = ret;
+ 			$("#" + ret.id).click(this, function(evt) {
+ 				theBoard.dehilight();
+ 				theBoard.selected = null;
+ 				this.parentNode.removeChild(this);
+ 			});
  			
-			//this.setAttribute("class", "selected");
-			//this.removeAttribute("style");
-			console.log(ret);
+ 			this.selected = ret;
+	};
+	
+	this.executeMove = function(hsquare, square, piece) {
+		console.log("Move: " + piece.name + " to " + square.id);
 	};
 	
 	this.hilighted = [];
-	this.hilight = function(sid) {
+	this.hilight = function(sid, piece) {
 		
-		console.log("HILIGHT: ");
-		console.log(sid);
-	 		var ret = sid.cloneNode(true);
- 			ret.setAttribute("class", "hilight");
- 			ret.setAttribute("id", sid.id + "-wrapper");
- 			ret.removeAttribute("style");
+	 	var ret = sid.cloneNode(true);
+ 		ret.setAttribute("class", "hilight");
+ 		ret.setAttribute("id", sid.id + "-wrapper");
+ 		ret.removeAttribute("style");
+ 		
+ 		sid.parentNode.appendChild(ret);
  			
- 			sid.parentNode.appendChild(ret);
+ 		$("#" + ret.id).click(this, function(evt) {
+ 			theBoard.executeMove(this, sid, piece);
+ 		});
  			
- 			this.hilighted.push(ret);
-	}
+ 		this.hilighted.push(ret);
+	};
 			
 	this.click = function(sid) {
 		
 		this.select(sid);
-		var sid_id = sid.id;
+		this.dehilight();
 		
+		var sid_id = sid.id;
 		var i;
 		var sname;
 		var theSquare;
@@ -397,7 +437,6 @@ function Board() {
 				theSquare = this.squares[i];
 			}
 		}
-		console.log(sname);
 		
 		var j;
 		var thePiece;
@@ -408,16 +447,16 @@ function Board() {
 			}
 		}
 		
-		var moves = theBoard.getValidMoves(theSquare, thePiece);
+		if (typeof thePiece !== "undefined") {
+			
+			var moves = theBoard.getValidMoves(theSquare, thePiece);
 		
-		for (i in moves) {
-			var sq = this.getSquareByOffset(theSquare, moves[i]);
-			var e = $("#" + sq.id).get(0);
-			console.log(e);
-			this.hilight(e);
+			for (i in moves) {
+				var e = $("#" + moves[i].id).get(0);
+				this.hilight(e, thePiece);
+			}
+			
 		}
-		
-		console.log(moves);
 		
 		return;
 
