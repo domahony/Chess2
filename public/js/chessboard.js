@@ -95,12 +95,12 @@ var QueenMoves = {
 		move_list: BishopMoves.move_list.concat(RookMoves.move_list),
 };
 
-function BlackPawnModifier(piece, moves) {
+function BlackPawnModifier(piece, moves, pieceArray) {
 	
 	var pmove = {x:0, y:-1};
 	var ret = moves.slice(0);
 
-	if (!theBoard.isOccupied(piece.square, pmove)) {
+	if (!theBoard.isOccupied(piece.square, pmove, pieceArray)) {
 		
 		var m = {
 				moves: [],	
@@ -109,7 +109,7 @@ function BlackPawnModifier(piece, moves) {
 		m.moves.push(pmove);
 		pmove = {x:0, y:-2};
 		if (piece.first_move()) {
-			if (!theBoard.isOccupied(piece.square, pmove)) {
+			if (!theBoard.isOccupied(piece.square, pmove, pieceArray)) {
 				m.moves.push(pmove);
 			}	
 		}
@@ -117,23 +117,23 @@ function BlackPawnModifier(piece, moves) {
 	}
 	
 	pmove = {x:1, y:-1};
-	if (theBoard.isValidCapture(piece.square, pmove)) {
+	if (theBoard.isValidCapture(piece.square, pmove, "BLACK", pieceArray)) {
 		ret.push({moves: [pmove]});
 	}
 	
 	pmove = {x:-1, y:-1};
-	if (theBoard.isValidCapture(piece.square, pmove)) {
+	if (theBoard.isValidCapture(piece.square, pmove, "BLACK", pieceArray)) {
 		ret.push({moves: [pmove]});
 	}
 	
 	return ret;
 }
 
-function WhitePawnModifier(piece, moves) {
+function WhitePawnModifier(piece, moves, pieceArray) {
 	var pmove = {x:0, y:1};
 	var ret = moves.slice(0);
 
-	if (!theBoard.isOccupied(piece.square, pmove)) {
+	if (!theBoard.isOccupied(piece.square, pmove, pieceArray)) {
 		
 		var m = {
 				moves: [],	
@@ -142,7 +142,7 @@ function WhitePawnModifier(piece, moves) {
 		m.moves.push(pmove);
 		pmove = {x:0, y:2};
 		if (piece.first_move()) {
-			if (!theBoard.isOccupied(piece.square, pmove)) {
+			if (!theBoard.isOccupied(piece.square, pmove, pieceArray)) {
 				m.moves.push(pmove);
 			}	
 		}
@@ -150,12 +150,12 @@ function WhitePawnModifier(piece, moves) {
 	}
 	
 	pmove = {x:1, y:1};
-	if (theBoard.isValidCapture(piece.square, pmove)) {
+	if (theBoard.isValidCapture(piece.square, pmove, "WHITE", pieceArray)) {
 		ret.push({moves: [pmove]});
 	}
 	
 	pmove = {x:-1, y:1};
-	if (theBoard.isValidCapture(piece.square, pmove)) {
+	if (theBoard.isValidCapture(piece.square, pmove, "WHITE", pieceArray)) {
 		ret.push({moves: [pmove]});
 	}
 	
@@ -168,7 +168,6 @@ var WhitePawnMoves = {modifier: WhitePawnModifier, move_list: []};
 function Board() {
 	
 	this.toPlay = "WHITE";
-	this.firstMove = true;
 	this.whiteCheck = false;
 	this.blackCheck = false;
 
@@ -214,7 +213,7 @@ function Board() {
 		// check if attacked x-1, x-2, x-3
 	}
 	
-	this.isOccupied = function(sname, move) {
+	this.isOccupied = function(sname, move, pieceArray) {
 		var ret = false;
 		var square = this.getSquare(sname);
 		var sq = this.getSquareByOffset(square, move);
@@ -223,13 +222,13 @@ function Board() {
 			return ret;
 		}
 		
-		var p = this.getPieceAtSquare(sq.name);	
+		var p = this.getPieceAtSquare(sq.name, pieceArray);	
 		console.log(p !== null);
 		
 		return p !== null;
 	}
 	
-	this.isValidCapture = function(sname, move) {
+	this.isValidCapture = function(sname, move, who, pieceArray) {
 		var ret = false;
 		var square = this.getSquare(sname);
 		var sq = this.getSquareByOffset(square, move);
@@ -238,10 +237,10 @@ function Board() {
 			return ret;
 		}
 		
-		var p = this.getPieceAtSquare(sq.name);
+		var p = this.getPieceAtSquare(sq.name, pieceArray);
 		
 		if (p !== null) {
-			if (this.toPlay !== p.owner) {
+			if (who !== p.owner) {
 				ret = true;
 				console.log(p);
 			}
@@ -250,13 +249,14 @@ function Board() {
 		return ret;
 	};
 	
-	this.getValidMoves = function(theSquare, thePiece, who) {
+	
+	this.getValidMoves = function(theSquare, thePiece, who, pieceArray, removeCheck) {
 		
-		var ret = []; 
+		var ret = [];
 		var d;
 		
 		var move_list = thePiece.directions.modifier(
-				thePiece, thePiece.directions.move_list); 
+				thePiece, thePiece.directions.move_list, pieceArray); 
 		
 		for (d in move_list) {
 			
@@ -270,15 +270,31 @@ function Board() {
 					continue;
 				}
 			
-				var p = theBoard.getPieceAtSquare(sq.name);
+				var p = theBoard.getPieceAtSquare(sq.name, pieceArray);
 			
 				if (p != null) {
 					
-					if (who != p.owner) {
-						ret.push(sq);
+					if (who == p.owner) {
+						break;
 					}
+					
+					if (removeCheck) {
+						if (this.willCauseCheck(who, m, pieceArray)) {
+							break;
+						}
+					}
+					
+					ret.push(sq);
 					break;
+					
 				} else {
+					
+					if (removeCheck) {
+						if (this.willCauseCheck(who, m,  pieceArray)) {
+							continue;
+						}
+					}
+					
 					ret.push(sq);
 				}
 			}
@@ -287,13 +303,13 @@ function Board() {
 		return ret; 
 	}
 	
-	this.getPieceAtSquare = function(sname) {
+	this.getPieceAtSquare = function(sname, pieceArray) {
 		
 		var p;
-		for (p in this.pieces) {
+		for (p in pieceArray) {
 			
-			if (this.pieces[p].square == sname) {
-				return this.pieces[p];
+			if (pieceArray[p].square == sname) {
+				return pieceArray[p];
 			}
 		}
 		return null;
@@ -325,7 +341,7 @@ function Board() {
 		this.squares2[this.squares[i].id] = this.squares[i].name;
 	}
 	
-	this.pieces = [
+	this.piecesX = [
 	               	new Piece("whiteRook2", "g3218", "h1", "WHITE", RookMoves),
 	                new Piece("whiteKnight2", "g60673", "g1", "WHITE", KnightMoves),
 	                new Piece("whiteBishop2", "g3010", "f1", "WHITE", BishopMoves),
@@ -363,11 +379,6 @@ function Board() {
 	            	new Piece("blackPawn1", "path17054", "a7", "BLACK", BlackPawnMoves),
 	];
 
-	this.move = {
-		m1: "",
-		m2: "",
-	};
-	
 	this.dehilight = function() {
 		var h;
 		for (h in this.hilighted) {
@@ -428,13 +439,67 @@ function Board() {
 		var rsquare = this.getSquareByOffset(src, diff);
 		console.log("Rsquare");
 		console.log(rsquare);
-		var rook = this.getPieceAtSquare(rsquare.name);
+		var rook = this.getPieceAtSquare(rsquare.name, this.piecesX);
 		
 		dst = this.getSquareByOffset(rsquare, offset);
 		
 		this.placePiece(rook, dst);
 		
-	}
+	};
+	
+	this.applyMove = function(who, move, parray) {
+		return parray;
+	};
+	
+
+	this.isCheck = function(who, pieceArray) {
+		//need to pass in the array of pieces in order
+		//to check proposed moves!!
+		
+		var targetKing;
+		
+		var i;
+		for (i in pieceArray) {
+			if (pieceArray[i].owner === who) {
+				
+				var p = pieceArray[i];
+				if (who === "WHITE" && p.name === "whiteKing") {
+					targetKing = p;
+				} else if (who === "BLACK" && p.name === "blackKing") {
+					targetKing = p;
+				}
+				
+			}
+		}
+		
+		for (i in pieceArray) {
+			
+			if (pieceArray[i].owner !== who) {
+				var p = pieceArray[i];
+				if (p.square === null) {
+					continue;
+				}
+				var sq = this.getSquare(p.square);
+				
+				var who2 = who === "BLACK" ? "WHITE" : "BLACK";
+				
+				var moves = this.getValidMoves(sq, p, who2, pieceArray, false);
+				
+				var j;
+				for (j in moves) {
+					if (moves[j].name === targetKing.square) {
+						// draw white king in red
+						// draw attacking piece in red
+						console.log("King is in Check from: " + p.name);
+						return true;
+					}
+				}
+			}
+			
+		}
+		
+		return false;
+	};
 	
 	this.executeRemoteMove = function(data) {
 		var sqSrc = data.move.substring(0,2);
@@ -446,63 +511,24 @@ function Board() {
 		console.log(sqSrc);
 		console.log(sqDst);
 		
-		var piece = this.getPieceAtSquare(sqSrc.name);
+		var piece = this.getPieceAtSquare(sqSrc.name, this.piecesX);
 		
 		if (this.isCastle(piece, sqSrc, sqDst)) {
 			this.executeCastle(piece, sqSrc, sqDst);
 		} else {
 			this.placePiece(piece, sqDst);
 		}
-		
-		this.checkWhiteCheck();
-		
+
+		this.isCheck("WHITE", this.piecesX);
 	};
 	
-	this.checkWhiteCheck = function() {
+	this.willCauseCheck = function(who, move, parray) {
 		
-		//need to pass in the array of pieces in order
-		//to check proposed moves!!
+		var pieceArray = this.applyMove(who, move, parray);
+		return this.isCheck(who, pieceArray);
 		
-		var whiteKing;
+	}	
 		
-		this.whiteCheck = false;
-		var i;
-		for (i in this.pieces) {
-			if (this.pieces[i].owner === "WHITE") {
-				var p = this.pieces[i]
-				if (p.name === "whiteKing") {
-					whiteKing = p;
-				}
-			}
-		}
-		
-		for (i in this.pieces) {
-			
-			if (this.pieces[i].owner === "BLACK") {
-				var p = this.pieces[i];
-				if (p.square === null) {
-					continue;
-				}
-				var sq = this.getSquare(p.square);
-				var moves = this.getValidMoves(sq, p, "BLACK");
-				
-				for (j in moves) {
-					if (moves[j].name === whiteKing.square) {
-						// draw white king in red
-						// draw attacking piece in red
-						console.log("King is in Check from: " + p.name);
-						this.whiteCheck = true;
-					}
-				}
-			}
-			
-		}
-		//loop through all blacks pieces
-		//get the square the king is on
-		//check to see if the piece can see the square
-		
-	};
-	
 	this.executeMove = function(hsquare, square, piece) {
 		
 		console.log("Move: " + piece.name + " to " + square.id);
@@ -544,29 +570,14 @@ function Board() {
 		this.select(sid);
 		this.dehilight();
 		
-		var sid_id = sid.id;
-		var i;
-		var sname;
-		var theSquare;
-		for(i in this.squares) {
-			if (this.squares[i].id == sid_id) {
-				sname = this.squares[i].name;
-				theSquare = this.squares[i];
-			}
-		}
+		var theSquare = this.getSquareById(sid.id);
+		var thePiece = this.getPieceAtSquare(theSquare.name, this.piecesX);
 		
-		var j;
-		var thePiece;
-		for (j in this.pieces) {
-			if (this.pieces[j].square == sname) {
-				thePiece = this.pieces[j];
-				console.log("Clicked Piece: " + this.pieces[j].name);
-			}
-		}
-		
-		if (typeof thePiece !== "undefined") {
+		console.log("Clicked Piece: " + thePiece.name);
+	
+		if (thePiece !== null) {
 			
-			var moves = theBoard.getValidMoves(theSquare, thePiece, "WHITE");
+			var moves = theBoard.getValidMoves(theSquare, thePiece, "WHITE", this.piecesX, true);
 		
 			for (i in moves) {
 				var e = $("#" + moves[i].id).get(0);
@@ -576,25 +587,7 @@ function Board() {
 		}
 		
 		return;
-
-		if (this.move.m1 != "" && this.move.m2 != "") {
-			this.move.m1 = square;
-			this.move.m2 = "";
-		} else if (square == this.move.m1) {
-			this.move.m1 = "";	
-			this.move.m2 = "";
-		} else if (square == this.move.m2) {
-			this.move.m2 = "";
-		} else if (this.move.m1 == "") {
-			this.move.m1 = square;	
-			this.move.m2 = "";
-		} else {
-			this.move.m2 = square;
-			$.get("chess/move/" + this.move.m1 + this.move.m2);
-			console.log("Current Move: " + this.move.m1 + this.move.m2);
-		}
-
-
+		
 	}
 
 	this.lookupPiece = function(piece) {
@@ -642,8 +635,8 @@ function Board() {
 		var src = this.getSquare(piece.square);
 		piece.moved = true;
 		
-		if (this.isOccupied(dest.name, {x:0, y:0})) {
-			var gonzo = this.getPieceAtSquare(dest.name);
+		if (this.isOccupied(dest.name, {x:0, y:0}, this.piecesX)) {
+			var gonzo = this.getPieceAtSquare(dest.name, this.piecesX);
 			gonzo.square = null;
 			var g = $("#" + gonzo.id).get(0);
 			g.parentNode.removeChild(g);
@@ -700,8 +693,8 @@ function rotateBoard() {
 	}
 
 	var i;
-	for (i in theBoard.pieces) {
-		rotate(svg, theBoard.pieces[i].id);
+	for (i in theBoard.piecesX) {
+		rotate(svg, theBoard.piecesX[i].id);
 	}
 }
 
@@ -722,14 +715,10 @@ $(document).ready( function () {
  		$("svg").find("defs").append(createStyle(data));	
  		
 		rotateBoard();
-		//theBoard.executeRemoteMove({move:"e8c8"});
-		/*
-		theBoard.placePiece("whiteKing", "e3");
-		theBoard.placePiece("whiteBishop2", "e4");
-		theBoard.placePiece("whiteKnight2", "e6");
-		theBoard.placePiece("whitePawn1", "c3");
-		theBoard.placePiece("whitePawn6", "f6");
-		theBoard.placePiece("blackPawn6", "f3");
-		*/
+		
+		$.get("chess/newgame", function(resp) {
+			console.log(resp);
+			//theBoard.executeRemoteMove({move:"d7d2"});
+		});
 	});
 });
