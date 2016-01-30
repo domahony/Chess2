@@ -551,6 +551,12 @@ function Board() {
 	this.placePiece = function(piece, dest) {
 		var src = this.getSquare(piece.square);
 		
+		if (this.isOccupied(dest.name, {x:0, y:0})) {
+			var gonzo = this.getPieceAtSquare(dest.name);
+			console.log("Remove this piece: ");
+			console.log(gonzo);
+		}
+		
 		console.log("Src");
 		console.log(src);
 		console.log("Dest");
