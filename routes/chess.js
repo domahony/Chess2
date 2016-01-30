@@ -85,5 +85,6 @@ exports.move = function(req, res){
 
 exports.newgame = function(req, res) {
 	theGame.write("ucinewgame");
+	theGame.moves = [];
 	res.send("Yeah!");
 };

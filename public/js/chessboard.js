@@ -92,7 +92,7 @@ var KingMoves = {modifier: KingMoveModifier, move_list: [
 
 var QueenMoves = {
 		modifier: function(piece, moves) {return moves;}, 
-		move_list: BishopMoves.move_list.concat(RookMoves),
+		move_list: BishopMoves.move_list.concat(RookMoves.move_list),
 };
 
 function BlackPawnModifier(piece, moves) {
@@ -169,6 +169,8 @@ function Board() {
 	
 	this.toPlay = "WHITE";
 	this.firstMove = true;
+	this.whiteCheck = false;
+	this.blackCheck = false;
 
 	this.squares = [
 
@@ -248,7 +250,7 @@ function Board() {
 		return ret;
 	};
 	
-	this.getValidMoves = function(theSquare, thePiece) {
+	this.getValidMoves = function(theSquare, thePiece, who) {
 		
 		var ret = []; 
 		var d;
@@ -268,14 +270,12 @@ function Board() {
 					continue;
 				}
 			
-				console.log(sq);
 				var p = theBoard.getPieceAtSquare(sq.name);
 			
 				if (p != null) {
 					
-					if (this.toPlay != p.owner) {
+					if (who != p.owner) {
 						ret.push(sq);
-						console.log(p);
 					}
 					break;
 				} else {
@@ -375,7 +375,7 @@ function Board() {
 			n.parentNode.removeChild(n);
 		}
  				
-		this.hilighted = [];		
+		this.hilighted = [];	
 	};
 	
 	this.selected = null;
@@ -402,6 +402,40 @@ function Board() {
  			this.selected = ret;
 	};
 	
+	this.isCastle = function(piece, src, dst) {
+		
+		if (piece.name !== "blackKing") {
+			return false;
+		}
+			
+		var diff = this.getDifference(src.name, dst.name);
+		return Math.abs(diff.x) > 1;
+	};
+	
+	this.executeCastle = function(piece, src, dst) { 
+		this.placePiece(piece, dst);
+		var diff = this.getDifference(dst.name, src.name);
+		
+		var offset;
+		if (diff.x > 0) {
+			diff.x += 1;
+			offset = {x: -2, y: 0};
+		} else {
+			diff.x -= 2;
+			offset = {x: 3, y: 0};
+		}
+		
+		var rsquare = this.getSquareByOffset(src, diff);
+		console.log("Rsquare");
+		console.log(rsquare);
+		var rook = this.getPieceAtSquare(rsquare.name);
+		
+		dst = this.getSquareByOffset(rsquare, offset);
+		
+		this.placePiece(rook, dst);
+		
+	}
+	
 	this.executeRemoteMove = function(data) {
 		var sqSrc = data.move.substring(0,2);
 		var sqDst = data.move.substring(2,4);
@@ -413,7 +447,60 @@ function Board() {
 		console.log(sqDst);
 		
 		var piece = this.getPieceAtSquare(sqSrc.name);
-		this.placePiece(piece, sqDst);
+		
+		if (this.isCastle(piece, sqSrc, sqDst)) {
+			this.executeCastle(piece, sqSrc, sqDst);
+		} else {
+			this.placePiece(piece, sqDst);
+		}
+		
+		this.checkWhiteCheck();
+		
+	};
+	
+	this.checkWhiteCheck = function() {
+		
+		//need to pass in the array of pieces in order
+		//to check proposed moves!!
+		
+		var whiteKing;
+		
+		this.whiteCheck = false;
+		var i;
+		for (i in this.pieces) {
+			if (this.pieces[i].owner === "WHITE") {
+				var p = this.pieces[i]
+				if (p.name === "whiteKing") {
+					whiteKing = p;
+				}
+			}
+		}
+		
+		for (i in this.pieces) {
+			
+			if (this.pieces[i].owner === "BLACK") {
+				var p = this.pieces[i];
+				if (p.square === null) {
+					continue;
+				}
+				var sq = this.getSquare(p.square);
+				var moves = this.getValidMoves(sq, p, "BLACK");
+				
+				for (j in moves) {
+					if (moves[j].name === whiteKing.square) {
+						// draw white king in red
+						// draw attacking piece in red
+						console.log("King is in Check from: " + p.name);
+						this.whiteCheck = true;
+					}
+				}
+			}
+			
+		}
+		//loop through all blacks pieces
+		//get the square the king is on
+		//check to see if the piece can see the square
+		
 	};
 	
 	this.executeMove = function(hsquare, square, piece) {
@@ -429,7 +516,10 @@ function Board() {
 		});
 		
 		this.placePiece(piece, sq);
+		this.dehilight();
 		
+ 		theBoard.selected.parentNode.removeChild(theBoard.selected);
+ 		theBoard.selected = null;
 	};
 	
 	this.hilighted = [];
@@ -476,7 +566,7 @@ function Board() {
 		
 		if (typeof thePiece !== "undefined") {
 			
-			var moves = theBoard.getValidMoves(theSquare, thePiece);
+			var moves = theBoard.getValidMoves(theSquare, thePiece, "WHITE");
 		
 			for (i in moves) {
 				var e = $("#" + moves[i].id).get(0);
@@ -550,11 +640,13 @@ function Board() {
 
 	this.placePiece = function(piece, dest) {
 		var src = this.getSquare(piece.square);
+		piece.moved = true;
 		
 		if (this.isOccupied(dest.name, {x:0, y:0})) {
 			var gonzo = this.getPieceAtSquare(dest.name);
-			console.log("Remove this piece: ");
-			console.log(gonzo);
+			gonzo.square = null;
+			var g = $("#" + gonzo.id).get(0);
+			g.parentNode.removeChild(g);
 		}
 		
 		console.log("Src");
@@ -630,6 +722,7 @@ $(document).ready( function () {
  		$("svg").find("defs").append(createStyle(data));	
  		
 		rotateBoard();
+		//theBoard.executeRemoteMove({move:"e8c8"});
 		/*
 		theBoard.placePiece("whiteKing", "e3");
 		theBoard.placePiece("whiteBishop2", "e4");
