@@ -12,6 +12,8 @@ var spawn = require('child_process').spawn;
 function Game() {
 
 	EventEmitter.call(this);
+	
+	this.moves = [];
 
 	this.child = spawn(
 		'/usr/games/gnuchess', ['--uci'],
@@ -53,19 +55,35 @@ util.inherits(Game, EventEmitter);
 
 var theGame = new Game();
 theGame.write("ucinewgame");
-theGame.write("position startpos moves e2e4");
+//theGame.write("position startpos moves e2e4");
 
 exports.move = function(req, res){
+	
+	theGame.moves.push(req.params.cmd);
 
-	var cmd = "position moves " + req.params.cmd + "\n";
+	var cmd = "position startpos moves"; //+ req.params.cmd + "\n";
+	
+	var m;
+	for (m in theGame.moves) {
+		cmd += " " + theGame.moves[m];
+	}
+	cmd += "\n";
 	cmd += "go movetime 2000\n"; 
 
 	var cb = function(data) {
 		console.log("Data2: " + data);
-		res.send(data);
+		
+		theGame.moves.push(data);
+	
+		res.send({move: data});
 		theGame.removeListener("bestmove", cb);
 	};
 
 	theGame.on("bestmove", cb); 
 	theGame.write(cmd);
+};
+
+exports.newgame = function(req, res) {
+	theGame.write("ucinewgame");
+	res.send("Yeah!");
 };

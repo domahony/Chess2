@@ -168,6 +168,7 @@ var WhitePawnMoves = {modifier: WhitePawnModifier, move_list: []};
 function Board() {
 	
 	this.toPlay = "WHITE";
+	this.firstMove = true;
 
 	this.squares = [
 
@@ -401,8 +402,34 @@ function Board() {
  			this.selected = ret;
 	};
 	
+	this.executeRemoteMove = function(data) {
+		var sqSrc = data.move.substring(0,2);
+		var sqDst = data.move.substring(2,4);
+		
+		sqSrc = this.getSquare(sqSrc);
+		sqDst = this.getSquare(sqDst);
+		
+		console.log(sqSrc);
+		console.log(sqDst);
+		
+		var piece = this.getPieceAtSquare(sqSrc.name);
+		this.placePiece(piece, sqDst);
+	};
+	
 	this.executeMove = function(hsquare, square, piece) {
+		
 		console.log("Move: " + piece.name + " to " + square.id);
+		console.log(piece);
+		console.log(square);
+		
+		var sq = this.getSquareById(square.id);
+		
+		$.get("chess/move/" + piece.square + sq.name, function(data) {
+			theBoard.executeRemoteMove(data);
+		});
+		
+		this.placePiece(piece, sq);
+		
 	};
 	
 	this.hilighted = [];
@@ -480,7 +507,7 @@ function Board() {
 
 	}
 
-	this.getPiece = function(piece) {
+	this.lookupPiece = function(piece) {
 		for(i in this.pieces) {
 			if (this.pieces[i].name == piece) {
 				return this.pieces[i];
@@ -489,6 +516,15 @@ function Board() {
 		return undefined;
 	}
 
+	this.getSquareById = function(square) {
+		for(i in this.squares) {
+			if (this.squares[i].id == square) {
+				return this.squares[i];
+			}
+		}
+		return undefined;
+	}
+	
 	this.getSquare = function(square) {
 		for(i in this.squares) {
 			if (this.squares[i].name == square) {
@@ -512,13 +548,16 @@ function Board() {
 		return {x:diff1, y:diff2};
 	}
 
-	this.placePiece = function(piece, square) {
-		var p = this.getPiece(piece);
-		var dest = this.getSquare(square); 
-		var src = this.getSquare(p.square);
+	this.placePiece = function(piece, dest) {
+		var src = this.getSquare(piece.square);
+		
+		console.log("Src");
+		console.log(src);
+		console.log("Dest");
+		console.log(dest);
 
 		var svg = $("svg").get(0);
-		var p_svg = $("#" + p.id).get(0);
+		var p_svg = $("#" + piece.id).get(0);
 
 		var offset = this.getDifference(dest.name, src.name);
 		var t7 = svg.createSVGTransform();
@@ -527,7 +566,7 @@ function Board() {
 		console.log(offset);
 		p_svg.transform.baseVal.insertItemBefore(t7, 0); 
 		
-		p.square = dest.name;
+		piece.square = dest.name;
 	}
 }
 

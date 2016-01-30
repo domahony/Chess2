@@ -28,7 +28,7 @@ if ('development' == app.get('env')) {
 
 //app.get('/', routes.index);
 app.get('/chess/move/:cmd', chess.move);
-//app.get('/chess/newgame', chess.newgame);
+app.get('/chess/newgame', chess.newgame);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
