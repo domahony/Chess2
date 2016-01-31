@@ -30,6 +30,11 @@ function Piece(name, id, square, owner, directions) {
 	this.first_move = function() {
 		return this.moved === false;
 	};
+	
+	this.makeClone = function() {
+		var ret = new Piece(this.name, this.id, this.square, this.owner, this.directions);
+		return ret;
+	};
 }
 
 var RookMoves =	{modifier: function(piece, moves) {return moves;}, move_list: [ 
@@ -266,20 +271,20 @@ function Board() {
 			for (m in dir.moves) {
 				var sq = theBoard.getSquareByOffset(theSquare, dir.moves[m]);
 			
-				if (sq == null) {
+				if (sq === null) {
 					continue;
 				}
 			
 				var p = theBoard.getPieceAtSquare(sq.name, pieceArray);
 			
-				if (p != null) {
+				if (p !== null) {
 					
-					if (who == p.owner) {
+					if (who === p.owner) {
 						break;
 					}
 					
 					if (removeCheck) {
-						if (this.willCauseCheck(who, m, pieceArray)) {
+						if (this.willCauseCheck(thePiece, who, dir.moves[m], pieceArray)) {
 							break;
 						}
 					}
@@ -290,7 +295,7 @@ function Board() {
 				} else {
 					
 					if (removeCheck) {
-						if (this.willCauseCheck(who, m,  pieceArray)) {
+						if (this.willCauseCheck(thePiece, who, dir.moves[m],  pieceArray)) {
 							continue;
 						}
 					}
@@ -301,20 +306,20 @@ function Board() {
 		}
 		
 		return ret; 
-	}
+	};
 	
 	this.getPieceAtSquare = function(sname, pieceArray) {
 		
 		var p;
 		for (p in pieceArray) {
 			
-			if (pieceArray[p].square == sname) {
+			if (pieceArray[p].square === sname) {
 				return pieceArray[p];
 			}
 		}
 		return null;
 		
-	}
+	};
 	
 	this.getSquareByOffset = function (sq, offset) {
 		var squareName = sq.name;
@@ -332,7 +337,7 @@ function Board() {
 		
 		var destName = String.fromCharCode(dest.x, dest.y);
 		return this.getSquare(destName);
-	}
+	};
 
 	this.squares2 = {};
 
@@ -447,8 +452,27 @@ function Board() {
 		
 	};
 	
-	this.applyMove = function(who, move, parray) {
-		return parray;
+	this.applyMove = function(p, who, move, parray) {
+		
+		var newArray = [];
+		var sq = this.getSquareByOffset(this.getSquare(p.square), move);
+		for (i in parray) {
+			
+			var n = parray[i].makeClone();
+			if (n.square === sq.name) {
+				n.square = null;
+			} else if (n.name === p.name) {
+				n.square = sq.name;
+			}
+			
+			newArray.push(n);
+		}
+		
+		
+		console.log("Apply Move: ");
+		console.log(move);
+		
+		return newArray;
 	};
 	
 
@@ -522,9 +546,9 @@ function Board() {
 		this.isCheck("WHITE", this.piecesX);
 	};
 	
-	this.willCauseCheck = function(who, move, parray) {
+	this.willCauseCheck = function(p, who, move, parray) {
 		
-		var pieceArray = this.applyMove(who, move, parray);
+		var pieceArray = this.applyMove(p, who, move, parray);
 		return this.isCheck(who, pieceArray);
 		
 	}	
