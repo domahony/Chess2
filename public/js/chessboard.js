@@ -12,10 +12,14 @@ function createStyle(d) {
 		var unselected = d.createTextNode(
 				"rect.unselected {fill: none; stroke-width: 1; stroke: none; pointer-events: none;} "
 				);
+		var incheck = d.createTextNode(
+				"rect.incheck {fill: none; stroke-width: 15; stroke: red; pointer-events: none;} "
+				);
 		ret.appendChild(path);
 		ret.appendChild(selected);
 		ret.appendChild(unselected);
 		ret.appendChild(hilighted);
+		ret.appendChild(incheck);
 		return ret;
 	};	
 }
@@ -56,6 +60,25 @@ var RookMoves =	{modifier: function(piece, moves) {return moves;}, move_list: [
 	]},			
 ]};
 
+var PP = new Piece();
+
+var Rook = {
+	type: "ROOK",
+	directions: RookMoves,
+};
+Object.setPrototypeOf(Rook, PP); 
+
+var WhiteRook = {
+	owner: "WHITE",
+};
+Object.setPrototypeOf(WhiteRook, Rook);
+
+var BlackRook = {
+	owner: "BLACK",
+};
+Object.setPrototypeOf(WhiteRook, Rook);
+
+
 var KnightMoves = {modifier: function(piece, moves) {return moves;}, move_list: [
 	{ moves: [{x: 2, y: 1},  ]},
 	{ moves: [{x: 2, y: -1}, ]},  
@@ -66,6 +89,22 @@ var KnightMoves = {modifier: function(piece, moves) {return moves;}, move_list: 
     { moves: [{x: -1, y: 2}, ]}, 
     { moves: [{x: -1, y: -2},]},
 ]};
+
+var Knight = {
+	type: "KNIGHT",
+	directions: KnightMoves,
+};
+Object.setPrototypeOf(Knight, PP); 
+
+var WhiteKnight = {
+	owner: "WHITE",
+};
+Object.setPrototypeOf(WhiteKnight, Knight);
+
+var BlackKnight = {
+	owner: "BLACK",
+};
+Object.setPrototypeOf(BlackKnight, Knight);
 
 var BishopMoves = {modifier: function(piece, moves) {return moves;}, move_list: [
                    
@@ -175,6 +214,7 @@ function Board() {
 	this.toPlay = "WHITE";
 	this.whiteCheck = false;
 	this.blackCheck = false;
+	this.checked = [];
 
 	this.squares = [
 
@@ -228,8 +268,6 @@ function Board() {
 		}
 		
 		var p = this.getPieceAtSquare(sq.name, pieceArray);	
-		console.log(p !== null);
-		
 		return p !== null;
 	}
 	
@@ -247,7 +285,6 @@ function Board() {
 		if (p !== null) {
 			if (who !== p.owner) {
 				ret = true;
-				console.log(p);
 			}
 		}
 		
@@ -347,14 +384,15 @@ function Board() {
 	}
 	
 	this.piecesX = [
-	               	new Piece("whiteRook2", "g3218", "h1", "WHITE", RookMoves),
-	                new Piece("whiteKnight2", "g60673", "g1", "WHITE", KnightMoves),
+	               	//new Piece("whiteRook2", "g3218", "h1", "WHITE", RookMoves),
+	               	Object.create(WhiteRook, {name: {value: "whiteRook2"}, id: {value: "g3218"}, square: {value: "h1", writable: true}}),
+	                Object.create(WhiteKnight, {name: {value: "whiteKnight2"}, id: {value: "g60673"}, square: {value: "g1", writable: true}}),
 	                new Piece("whiteBishop2", "g3010", "f1", "WHITE", BishopMoves),
 	                new Piece("whiteKing", "g82263", "e1", "WHITE", KingMoves),
 	                new Piece("whiteQueen", "g80246", "d1", "WHITE", QueenMoves),
 				    new Piece("whiteBishop1", "g3388", "c1", "WHITE", BishopMoves),
-				    new Piece("whiteKnight1", "g60695", "b1", "WHITE", KnightMoves),
-				    new Piece("whiteRook1", "g3416", "a1", "WHITE", RookMoves),
+				    Object.create(WhiteKnight, {name:{value: "whiteKnight1"}, id: {value: "g60695"}, square: {value: "b1", writable: true}}),
+				    Object.create(WhiteRook, {name: {value: "whiteRook1"}, id: {value: "g3416"}, square: {value: "a1", writable: true}}),
 					
 					new Piece("whitePawn8", "path3444", "h2", "WHITE", WhitePawnMoves),
 					new Piece("whitePawn7", "path3442", "g2", "WHITE", WhitePawnMoves),
@@ -366,12 +404,12 @@ function Board() {
 					new Piece("whitePawn1", "path2575", "a2", "WHITE", WhitePawnMoves),
 					
 					new Piece("blackRook1", "g46309", "h8", "BLACK", RookMoves),
-	            	new Piece("blackKnight1", "g60728", "g8", "BLACK", KnightMoves),
+	            	Object.create(BlackKnight, {name: {value: "blackKnight1"}, id: {value: "g60728"}, square: {value:"g8", writable: true}}),
 	            	new Piece("blackBishop1", "g63721", "f8", "BLACK", BishopMoves),
 	            	new Piece("blackKing", "g70004", "e8", "BLACK", KingMoves),
 	            	new Piece("blackQueen", "g67023", "d8", "BLACK", QueenMoves),
 	            	new Piece("blackBishop2", "g63818", "c8", "BLACK", BishopMoves),
-	            	new Piece("blackKnight2", "g49858", "b8", "BLACK", KnightMoves),
+	            	Object.create(BlackKnight, {name: {value: "blackKnight2"}, id: {value: "g49858"}, square: {value: "b8", writable: true}}),
 	            	new Piece("blackRook2", "g46345", "a8", "BLACK", RookMoves),
 
 	            	new Piece("blackPawn8", "path3194", "h7", "BLACK", BlackPawnMoves),
@@ -442,8 +480,6 @@ function Board() {
 		}
 		
 		var rsquare = this.getSquareByOffset(src, diff);
-		console.log("Rsquare");
-		console.log(rsquare);
 		var rook = this.getPieceAtSquare(rsquare.name, this.piecesX);
 		
 		dst = this.getSquareByOffset(rsquare, offset);
@@ -468,10 +504,6 @@ function Board() {
 			newArray.push(n);
 		}
 		
-		
-		console.log("Apply Move: ");
-		console.log(move);
-		
 		return newArray;
 	};
 	
@@ -481,6 +513,7 @@ function Board() {
 		//to check proposed moves!!
 		
 		var targetKing;
+		var ret = {isCheck: false, pieces: []};
 		
 		var i;
 		for (i in pieceArray) {
@@ -495,6 +528,7 @@ function Board() {
 				
 			}
 		}
+		ret.king = targetKing;
 		
 		for (i in pieceArray) {
 			
@@ -512,28 +546,62 @@ function Board() {
 				var j;
 				for (j in moves) {
 					if (moves[j].name === targetKing.square) {
-						// draw white king in red
-						// draw attacking piece in red
-						console.log("King is in Check from: " + p.name);
-						return true;
+						ret.pieces.push(p);
+						ret.isCheck = true;
 					}
 				}
 			}
 			
 		}
 		
-		return false;
+		return ret;
 	};
 	
+	this.hilightCheck = function(info) {
+		
+		var i;
+		for (i in this.checked) {
+			this.checked[i].parentNode.removeChild(this.checked[i]);
+		}
+		
+		this.checked = [];
+		 	
+		if (info.isCheck) {
+			
+				var sq = this.getSquare(info.king.square);
+			
+				var king = $("#" + sq.id).get(0);
+				
+			 	var ret = king.cloneNode(true);
+			 	ret.setAttribute("class", "incheck");
+			 	ret.setAttribute("id", sq.id + "-check");
+			 	ret.removeAttribute("style");
+			 	king.parentNode.appendChild(ret);
+			 	this.checked.push(ret);
+			 	
+			 	for (i in info.pieces) {
+			 		
+			 		sq = this.getSquare(info.pieces[i].square);
+			 		var p = $("#" + sq.id).get(0);
+			 		ret = p.cloneNode(true);
+			 		ret.setAttribute("class", "incheck");
+			 		ret.setAttribute("id", sq.id + "-check");
+			 		ret.removeAttribute("style");
+			 		p.parentNode.appendChild(ret);
+			 		this.checked.push(ret);
+			 	}
+		}
+	} 
+	
 	this.executeRemoteMove = function(data) {
+		
+		console.log("Remote Move:");
+		console.log(data);
 		var sqSrc = data.move.substring(0,2);
 		var sqDst = data.move.substring(2,4);
 		
 		sqSrc = this.getSquare(sqSrc);
 		sqDst = this.getSquare(sqDst);
-		
-		console.log(sqSrc);
-		console.log(sqDst);
 		
 		var piece = this.getPieceAtSquare(sqSrc.name, this.piecesX);
 		
@@ -543,21 +611,19 @@ function Board() {
 			this.placePiece(piece, sqDst);
 		}
 
-		this.isCheck("WHITE", this.piecesX);
+		var checkInfo = this.isCheck("WHITE", this.piecesX);
+		this.hilightCheck(checkInfo);
 	};
 	
 	this.willCauseCheck = function(p, who, move, parray) {
 		
 		var pieceArray = this.applyMove(p, who, move, parray);
-		return this.isCheck(who, pieceArray);
+		var ret = this.isCheck(who, pieceArray);
+		return ret.isCheck;
 		
-	}	
+	};	
 		
 	this.executeMove = function(hsquare, square, piece) {
-		
-		console.log("Move: " + piece.name + " to " + square.id);
-		console.log(piece);
-		console.log(square);
 		
 		var sq = this.getSquareById(square.id);
 		
@@ -597,8 +663,6 @@ function Board() {
 		var theSquare = this.getSquareById(sid.id);
 		var thePiece = this.getPieceAtSquare(theSquare.name, this.piecesX);
 		
-		console.log("Clicked Piece: " + thePiece.name);
-	
 		if (thePiece !== null) {
 			
 			var moves = theBoard.getValidMoves(theSquare, thePiece, "WHITE", this.piecesX, true);
@@ -666,11 +730,6 @@ function Board() {
 			g.parentNode.removeChild(g);
 		}
 		
-		console.log("Src");
-		console.log(src);
-		console.log("Dest");
-		console.log(dest);
-
 		var svg = $("svg").get(0);
 		var p_svg = $("#" + piece.id).get(0);
 
@@ -678,9 +737,7 @@ function Board() {
 		var t7 = svg.createSVGTransform();
 		t7.setTranslate(offset.x * -150, 1 * offset.y * 150);
 
-		console.log(offset);
 		p_svg.transform.baseVal.insertItemBefore(t7, 0); 
-		
 		piece.square = dest.name;
 	}
 }
@@ -742,7 +799,7 @@ $(document).ready( function () {
 		
 		$.get("chess/newgame", function(resp) {
 			console.log(resp);
-			//theBoard.executeRemoteMove({move:"d7d2"});
+			//theBoard.executeRemoteMove({move:"d7b1"});
 		});
 	});
 });
